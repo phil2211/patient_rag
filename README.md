@@ -34,3 +34,21 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Data Preparation
+
+### Generate Embeddings
+
+To generate vector embeddings for the `movies` collection in the `sample_mflix` database, run the following command:
+
+```bash
+npx tsx scripts/generate-embeddings.ts
+```
+
+This script will:
+1. Connect to the MongoDB instance defined in `.env.local`.
+2. Iterate through documents in the `sample_mflix.movies` collection.
+3. Generate embeddings for the `fullplot` field using OpenAI's `text-embedding-3-small` model.
+4. Store the embeddings in a new `plot_embedding` field.
+
+The script is idempotent and can be stopped/restarted; it will skip documents that already have embeddings.
