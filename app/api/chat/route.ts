@@ -38,7 +38,7 @@ export async function POST(req: Request) {
   try {
     const { messages } = await req.json();
     const lastMessage = messages[messages.length - 1];
-    
+
     // Handle different message formats:
     // 1. Standard format: { role, content }
     // 2. Parts format: { role, parts: [{ type: 'text', text: '...' }] }
@@ -54,7 +54,7 @@ export async function POST(req: Request) {
     } else {
       throw new Error('Invalid message format: missing content or parts');
     }
-    
+
     if (!userQuery || !userQuery.trim()) {
       throw new Error('Empty message content');
     }
@@ -95,7 +95,7 @@ export async function POST(req: Request) {
     const movies = await collection.aggregate(pipeline).toArray();
 
     // 3. Prepare context
-    const context = movies.map((movie) => 
+    const context = movies.map((movie) =>
       `Title: ${movie.title} (${movie.year})\nPlot: ${movie.fullplot || movie.plot}\n Score: ${movie.score}\n`
     ).join('\n---\n');
 
@@ -110,7 +110,7 @@ IMPORTANT: Format your response using Markdown. Use:
 - Line breaks for better readability
 - Headers (##) for sections when appropriate
 
-At the end of the response, list the titles of every movie returned by the search including the score using a markdown list format.
+At the end of the response, list the titles of every movie returned by the search including the score using a markdown list format. It is important to make sure that you always alsway list the score together with the results
 
 Context:
 ${context}`;
