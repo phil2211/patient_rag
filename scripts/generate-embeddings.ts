@@ -54,7 +54,7 @@ async function generateEmbeddings() {
 
             try {
                 const embeddingResponse = await openai.embeddings.create({
-                    model: 'text-embedding-3-small',
+                    model: 'text-embedding-ada-002',
                     input: doc.fullplot,
                 });
 
