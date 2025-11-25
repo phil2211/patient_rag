@@ -1,7 +1,26 @@
-import { streamText, Message } from 'ai';
+import { streamText } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
 import clientPromise from '@/lib/mongodb';
 import OpenAI from 'openai';
+
+// Type definitions for message handling
+interface MessagePart {
+  type: string;
+  text?: string;
+}
+
+interface MessageWithParts {
+  role: string;
+  content?: string;
+  parts?: MessagePart[];
+}
+
+interface MessageWithContent {
+  role: string;
+  content: string;
+}
+
+type Message = MessageWithParts | MessageWithContent;
 
 const openaiProvider = createOpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -29,8 +48,8 @@ export async function POST(req: Request) {
     } else if (lastMessage.parts && Array.isArray(lastMessage.parts)) {
       // Extract text from parts array
       const textParts = lastMessage.parts
-        .filter((part: any) => part.type === 'text' && part.text)
-        .map((part: any) => part.text);
+        .filter((part: MessagePart) => part.type === 'text' && part.text)
+        .map((part: MessagePart) => part.text);
       userQuery = textParts.join(' ');
     } else {
       throw new Error('Invalid message format: missing content or parts');
@@ -77,12 +96,21 @@ export async function POST(req: Request) {
 
     // 3. Prepare context
     const context = movies.map((movie) => 
-      `Title: ${movie.title} (${movie.year})\nPlot: ${movie.fullplot || movie.plot}\n`
+      `Title: ${movie.title} (${movie.year})\nPlot: ${movie.fullplot || movie.plot}\n Score: ${movie.score}\n`
     ).join('\n---\n');
 
     const systemPrompt = `You are a helpful movie assistant. Use the following movie context to answer the user's question.
 If the answer is not in the context, say you don't know based on the available information.
 Always mention the movie title when discussing it.
+
+IMPORTANT: Format your response using Markdown. Use:
+- **Bold** for emphasis on important points
+- Unordered lists (- or *) when listing multiple items
+- Ordered lists (1., 2., etc.) when providing step-by-step information or ranked items
+- Line breaks for better readability
+- Headers (##) for sections when appropriate
+
+At the end of the response, list the titles of every movie returned by the search including the score using a markdown list format.
 
 Context:
 ${context}`;
@@ -90,16 +118,16 @@ ${context}`;
     // 4. Stream Text
     // Convert messages to standard format, handling both content and parts formats
     const coreMessages = messages
-      .filter((m: any) => m.role !== 'system')
-      .map((m: any) => {
+      .filter((m: Message) => m.role !== 'system')
+      .map((m: Message) => {
         let content: string;
-        if (m.content) {
+        if ('content' in m && m.content) {
           content = m.content;
-        } else if (m.parts && Array.isArray(m.parts)) {
+        } else if ('parts' in m && m.parts && Array.isArray(m.parts)) {
           // Extract text from parts array
           const textParts = m.parts
-            .filter((part: any) => part.type === 'text' && part.text)
-            .map((part: any) => part.text);
+            .filter((part: MessagePart) => part.type === 'text' && part.text)
+            .map((part: MessagePart) => part.text);
           content = textParts.join(' ');
         } else {
           content = '';
@@ -126,10 +154,13 @@ ${context}`;
     }));
 
     // In V5, use toUIMessageStreamResponse to return stream with data
+    // Type assertion needed as the types may not include the data property yet
     return result.toUIMessageStreamResponse({
       data: {
         sources: sanitizedMovies,
       },
+    } as Parameters<typeof result.toUIMessageStreamResponse>[0] & {
+      data: { sources: typeof sanitizedMovies };
     });
 
   } catch (error) {

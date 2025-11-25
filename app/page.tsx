@@ -3,6 +3,8 @@
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
 import { useEffect, useRef, useState } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface Movie {
   _id: string;
@@ -106,7 +108,30 @@ export default function Home() {
                     {m.role === 'user' ? 'You' : 'AI Assistant'}
                   </span>
                   {m.parts.filter(part => part.type === 'text').map((part, index) => (
-                    <span key={index}>{part.text}</span>
+                    m.role === 'assistant' ? (
+                      <div key={index} className="markdown-content">
+                        <ReactMarkdown
+                          remarkPlugins={[remarkGfm]}
+                          components={{
+                            ul: ({ children }) => <ul className="list-disc list-inside my-2 space-y-1 ml-2">{children}</ul>,
+                            ol: ({ children }) => <ol className="list-decimal list-inside my-2 space-y-1 ml-2">{children}</ol>,
+                            li: ({ children }) => <li className="ml-2">{children}</li>,
+                            p: ({ children }) => <p className="my-2 leading-relaxed">{children}</p>,
+                            strong: ({ children }) => <strong className="font-bold text-white">{children}</strong>,
+                            em: ({ children }) => <em className="italic">{children}</em>,
+                            h1: ({ children }) => <h1 className="text-xl font-bold mt-4 mb-2">{children}</h1>,
+                            h2: ({ children }) => <h2 className="text-lg font-bold mt-3 mb-2">{children}</h2>,
+                            h3: ({ children }) => <h3 className="text-base font-bold mt-2 mb-1">{children}</h3>,
+                            code: ({ children }) => <code className="bg-gray-700 px-1.5 py-0.5 rounded text-sm font-mono">{children}</code>,
+                            blockquote: ({ children }) => <blockquote className="border-l-4 border-gray-600 pl-4 my-2 italic text-gray-300">{children}</blockquote>,
+                          }}
+                        >
+                          {part.text}
+                        </ReactMarkdown>
+                      </div>
+                    ) : (
+                      <span key={index}>{part.text}</span>
+                    )
                   ))}
                 </div>
 
